@@ -29,18 +29,25 @@ function isWebhookTarget(value: unknown): value is WebhookTarget {
 export function normalizeWebhookTargets(value: unknown): WebhookTarget[] {
   if (Array.isArray(value)) return value.filter(isWebhookTarget);
   if (isWebhookTarget(value)) return [value];
+  if (value && typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).filter(
+      isWebhookTarget,
+    );
+  }
   return [];
 }
 
 export async function readWebhookTargets(): Promise<WebhookTarget[]> {
   const stored = await webhookTargets.getValue();
-  const normalized = normalizeWebhookTargets(stored);
+  return normalizeWebhookTargets(stored);
+}
 
-  if (!Array.isArray(stored)) {
-    await webhookTargets.setValue(normalized);
-  }
-
-  return normalized;
+export function writeWebhookTargets(
+  targets: readonly WebhookTarget[],
+): Promise<void> {
+  return webhookTargets.setValue(
+    targets.map((target) => ({ ...target })),
+  );
 }
 
 export function buildWebhookUrl(
