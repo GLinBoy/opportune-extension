@@ -9,7 +9,7 @@ import {
   normalizeServerBaseUrl,
   parseWebhookUrl,
   readWebhookTargets,
-  webhookTargets,
+  writeWebhookTargets,
   type WebhookTarget,
 } from '@/utils/webhookTargets';
 
@@ -137,7 +137,11 @@ async function save() {
 
   let granted = false;
   if (originPattern) {
-    granted = await browser.permissions.request({ origins: [originPattern] });
+    try {
+      granted = await browser.permissions.request({ origins: [originPattern] });
+    } catch {
+      granted = false;
+    }
   }
 
   const values = {
@@ -161,7 +165,7 @@ async function save() {
     ];
   }
 
-  await webhookTargets.setValue(targets.value);
+  await writeWebhookTargets(targets.value);
   permissions.value = { ...permissions.value, [affectedId]: granted };
   closeDialog();
 
@@ -173,7 +177,12 @@ async function save() {
 async function grantPermission(target: WebhookTarget) {
   const pattern = getOriginPattern(target.serverBaseUrl);
   if (!pattern) return;
-  const granted = await browser.permissions.request({ origins: [pattern] });
+  let granted = false;
+  try {
+    granted = await browser.permissions.request({ origins: [pattern] });
+  } catch {
+    granted = false;
+  }
   permissions.value = { ...permissions.value, [target.id]: granted };
   if (granted) savedWarning.value = '';
 }
@@ -186,7 +195,7 @@ async function confirmDelete() {
   const target = pendingDelete.value;
   if (!target) return;
   targets.value = targets.value.filter((item) => item.id !== target.id);
-  await webhookTargets.setValue(targets.value);
+  await writeWebhookTargets(targets.value);
   pendingDelete.value = null;
 }
 

@@ -26,20 +26,28 @@ function targetIdFromMenuId(menuItemId: string | number): string | null {
     : null;
 }
 
+let menuRebuildQueue: Promise<void> = Promise.resolve();
+
+function scheduleRebuildMenus(): void {
+  menuRebuildQueue = menuRebuildQueue.then(rebuildMenus).catch((error) => {
+    console.error('[send-to-opportune] Failed to rebuild context menus', error);
+  });
+}
+
 export default defineBackground(() => {
   browser.runtime.onInstalled.addListener(() => {
-    void rebuildMenus();
+    scheduleRebuildMenus();
   });
 
   webhookTargets.watch(() => {
-    void rebuildMenus();
+    scheduleRebuildMenus();
   });
 
   browser.contextMenus.onClicked.addListener((info, tab) => {
     void handleMenuClick(info, tab);
   });
 
-  void rebuildMenus();
+  scheduleRebuildMenus();
 });
 
 async function rebuildMenus(): Promise<void> {
@@ -49,43 +57,39 @@ async function rebuildMenus(): Promise<void> {
     // Nothing to clear yet.
   }
 
-  try {
-    const targets = await readWebhookTargets();
+  const targets = await readWebhookTargets();
 
-    if (targets.length === 0) {
-      browser.contextMenus.create({
-        id: MENU_OPTIONS_ID,
-        title: 'Send to Opportune — set up a target…',
-        contexts: ['page'],
-      });
-      return;
-    }
+  if (targets.length === 0) {
+    await browser.contextMenus.create({
+      id: MENU_OPTIONS_ID,
+      title: 'Send to Opportune — set up a target…',
+      contexts: ['page'],
+    });
+    return;
+  }
 
-    if (targets.length === 1) {
-      browser.contextMenus.create({
-        id: targetMenuId(targets[0].id),
-        title: 'Send to Opportune',
-        contexts: ['page'],
-      });
-      return;
-    }
-
-    browser.contextMenus.create({
-      id: MENU_ROOT_ID,
+  if (targets.length === 1) {
+    await browser.contextMenus.create({
+      id: targetMenuId(targets[0].id),
       title: 'Send to Opportune',
       contexts: ['page'],
     });
+    return;
+  }
 
-    for (const target of targets) {
-      browser.contextMenus.create({
-        id: targetMenuId(target.id),
-        title: target.label,
-        contexts: ['page'],
-        parentId: MENU_ROOT_ID,
-      });
-    }
-  } catch (error) {
-    console.error('[send-to-opportune] Failed to rebuild context menus', error);
+  await browser.contextMenus.create({
+    id: MENU_ROOT_ID,
+    title: 'Send to Opportune',
+    contexts: ['page'],
+  });
+
+  for (const target of targets) {
+    await browser.contextMenus.create({
+      id: targetMenuId(target.id),
+      title: target.label,
+      contexts: ['page'],
+      parentId: MENU_ROOT_ID,
+    });
   }
 }
 
@@ -105,7 +109,7 @@ async function handleMenuClick(
   const target = targets.find((item) => item.id === targetId);
 
   if (!target) {
-    void rebuildMenus();
+    scheduleRebuildMenus();
     if (tab?.id != null) {
       await showToast(
         tab.id,
