@@ -17,6 +17,59 @@ export const webhookTargets = storage.defineItem<WebhookTarget[]>(
 export function buildWebhookUrl(
   target: Pick<WebhookTarget, 'serverBaseUrl' | 'endpointId'>,
 ): string {
-  const base = target.serverBaseUrl.replace(/\/+$/, '');
+  const base = normalizeServerBaseUrl(target.serverBaseUrl);
   return `${base}/api/webhook/${target.endpointId}`;
+}
+
+export function normalizeServerBaseUrl(value: string): string {
+  return value.trim().replace(/\/+$/, '');
+}
+
+export function isValidServerBaseUrl(value: string): boolean {
+  try {
+    const { protocol } = new URL(normalizeServerBaseUrl(value));
+    return protocol === 'http:' || protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+export function getOriginPattern(serverBaseUrl: string): string | null {
+  try {
+    return `${new URL(normalizeServerBaseUrl(serverBaseUrl)).origin}/*`;
+  } catch {
+    return null;
+  }
+}
+
+export interface ParsedWebhookUrl {
+  serverBaseUrl: string;
+  endpointId: string;
+}
+
+export function parseWebhookUrl(value: string): ParsedWebhookUrl | null {
+  let url: URL;
+  try {
+    url = new URL(value.trim());
+  } catch {
+    return null;
+  }
+
+  const match = url.pathname.match(/^(.*)\/api\/webhook\/([^/]+)\/?$/);
+  if (!match) return null;
+
+  const serverBaseUrl = normalizeServerBaseUrl(`${url.origin}${match[1]}`);
+  let endpointId: string;
+  try {
+    endpointId = decodeURIComponent(match[2]);
+  } catch {
+    return null;
+  }
+  if (!endpointId) return null;
+
+  return { serverBaseUrl, endpointId };
+}
+
+export function maskToken(token: string): string {
+  return token ? '••••••••' : '';
 }
