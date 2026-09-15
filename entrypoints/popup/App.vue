@@ -1,16 +1,32 @@
 <script lang="ts" setup>
+import { onMounted, ref } from 'vue';
 import { browser } from 'wxt/browser';
+import { webhookTargets } from '@/utils/webhookTargets';
+
+const count = ref(0);
 
 async function openOptions() {
   await browser.runtime.openOptionsPage();
   window.close();
 }
+
+onMounted(async () => {
+  const targets = (await webhookTargets.getValue()) ?? [];
+  count.value = targets.length;
+});
 </script>
 
 <template>
   <main>
     <h1>Send to Opportune</h1>
-    <p>Configure webhook targets, then right-click a job posting to send it.</p>
+    <p v-if="count === 0">
+      No targets configured yet. Add one, then right-click a job posting to send
+      it.
+    </p>
+    <p v-else>
+      {{ count }} target{{ count === 1 ? '' : 's' }} configured. Right-click a job
+      posting to send it.
+    </p>
     <button type="button" @click="openOptions">Open settings</button>
   </main>
 </template>
