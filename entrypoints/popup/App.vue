@@ -1,30 +1,51 @@
 <script lang="ts" setup>
-import HelloWorld from '@/components/HelloWorld.vue';
+import { browser } from 'wxt/browser';
+
+async function openOptions() {
+  await browser.runtime.openOptionsPage();
+  window.close();
+}
 </script>
 
 <template>
-  <div>
-    <a href="https://wxt.dev" target="_blank">
-      <img src="/wxt.svg" class="logo" alt="WXT logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="@/assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
-  </div>
-  <HelloWorld msg="WXT + Vue" />
+  <main>
+    <h1>Send to Opportune</h1>
+    <p>Configure webhook targets, then right-click a job posting to send it.</p>
+    <button type="button" @click="openOptions">Open settings</button>
+  </main>
 </template>
 
 <style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+main {
+  padding: 1rem 1.25rem;
+  min-width: 260px;
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #54bc4ae0);
+
+h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
 }
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+
+p {
+  margin: 0 0 1rem;
+  color: #6b7280;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+button {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background-color: #4f46e5;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #4338ca;
 }
 </style>

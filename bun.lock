@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "wxt-vue-starter",
+      "name": "opportune-extension",
       "dependencies": {
         "vue": "^3.5.29",
       },
