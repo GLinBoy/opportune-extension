@@ -14,6 +14,35 @@ export const webhookTargets = storage.defineItem<WebhookTarget[]>(
   { fallback: [] },
 );
 
+function isWebhookTarget(value: unknown): value is WebhookTarget {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<WebhookTarget>;
+  return (
+    typeof candidate.id === 'string' &&
+    typeof candidate.label === 'string' &&
+    typeof candidate.serverBaseUrl === 'string' &&
+    typeof candidate.endpointId === 'string' &&
+    typeof candidate.token === 'string'
+  );
+}
+
+export function normalizeWebhookTargets(value: unknown): WebhookTarget[] {
+  if (Array.isArray(value)) return value.filter(isWebhookTarget);
+  if (isWebhookTarget(value)) return [value];
+  return [];
+}
+
+export async function readWebhookTargets(): Promise<WebhookTarget[]> {
+  const stored = await webhookTargets.getValue();
+  const normalized = normalizeWebhookTargets(stored);
+
+  if (!Array.isArray(stored)) {
+    await webhookTargets.setValue(normalized);
+  }
+
+  return normalized;
+}
+
 export function buildWebhookUrl(
   target: Pick<WebhookTarget, 'serverBaseUrl' | 'endpointId'>,
 ): string {
