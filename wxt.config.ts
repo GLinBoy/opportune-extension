@@ -13,7 +13,11 @@ export default defineConfig({
     optional_host_permissions: ['http://*/*', 'https://*/*'],
     browser_specific_settings: {
       gecko: {
+        id: 'send-to-opportune@glinboy.github.io',
         strict_min_version: '109.0',
+        data_collection_permissions: {
+          required: ['none'],
+        },
       },
     },
   },

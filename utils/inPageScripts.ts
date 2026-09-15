@@ -1,6 +1,32 @@
 export type ToastTone = 'success' | 'error';
 
-export function capturePageHtml(): string {
+export async function capturePageHtml(): Promise<string> {
+  const MAX_WAIT_MS = 10000;
+
+  if (document.readyState !== 'complete') {
+    await new Promise<void>((resolve) => {
+      let timer = 0;
+      let settled = false;
+
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        document.removeEventListener('readystatechange', onReadyStateChange);
+        window.removeEventListener('load', finish);
+        window.clearTimeout(timer);
+        resolve();
+      };
+
+      const onReadyStateChange = () => {
+        if (document.readyState === 'complete') finish();
+      };
+
+      timer = window.setTimeout(finish, MAX_WAIT_MS);
+      document.addEventListener('readystatechange', onReadyStateChange);
+      window.addEventListener('load', finish);
+    });
+  }
+
   return document.documentElement.outerHTML;
 }
 
