@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue';
 import { browser } from 'wxt/browser';
-import { webhookTargets } from '@/utils/webhookTargets';
+import { readWebhookTargets } from '@/utils/webhookTargets';
 
 const count = ref(0);
 
@@ -11,7 +11,7 @@ async function openOptions() {
 }
 
 onMounted(async () => {
-  const targets = (await webhookTargets.getValue()) ?? [];
+  const targets = await readWebhookTargets();
   count.value = targets.length;
 });
 </script>

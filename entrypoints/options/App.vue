@@ -8,6 +8,7 @@ import {
   maskToken,
   normalizeServerBaseUrl,
   parseWebhookUrl,
+  readWebhookTargets,
   webhookTargets,
   type WebhookTarget,
 } from '@/utils/webhookTargets';
@@ -38,7 +39,7 @@ const targetsMissingPermission = computed(() =>
 );
 
 async function load() {
-  targets.value = (await webhookTargets.getValue()) ?? [];
+  targets.value = await readWebhookTargets();
   await refreshPermissions();
   loaded.value = true;
 }

@@ -1,6 +1,7 @@
 import { browser, type Browser } from 'wxt/browser';
 import {
   buildWebhookUrl,
+  readWebhookTargets,
   webhookTargets,
   type WebhookTarget,
 } from '@/utils/webhookTargets';
@@ -48,39 +49,43 @@ async function rebuildMenus(): Promise<void> {
     // Nothing to clear yet.
   }
 
-  const targets = (await webhookTargets.getValue()) ?? [];
+  try {
+    const targets = await readWebhookTargets();
 
-  if (targets.length === 0) {
-    browser.contextMenus.create({
-      id: MENU_OPTIONS_ID,
-      title: 'Send to Opportune — set up a target…',
-      contexts: ['page'],
-    });
-    return;
-  }
+    if (targets.length === 0) {
+      browser.contextMenus.create({
+        id: MENU_OPTIONS_ID,
+        title: 'Send to Opportune — set up a target…',
+        contexts: ['page'],
+      });
+      return;
+    }
 
-  if (targets.length === 1) {
+    if (targets.length === 1) {
+      browser.contextMenus.create({
+        id: targetMenuId(targets[0].id),
+        title: 'Send to Opportune',
+        contexts: ['page'],
+      });
+      return;
+    }
+
     browser.contextMenus.create({
-      id: targetMenuId(targets[0].id),
+      id: MENU_ROOT_ID,
       title: 'Send to Opportune',
       contexts: ['page'],
     });
-    return;
-  }
 
-  browser.contextMenus.create({
-    id: MENU_ROOT_ID,
-    title: 'Send to Opportune',
-    contexts: ['page'],
-  });
-
-  for (const target of targets) {
-    browser.contextMenus.create({
-      id: targetMenuId(target.id),
-      title: target.label,
-      contexts: ['page'],
-      parentId: MENU_ROOT_ID,
-    });
+    for (const target of targets) {
+      browser.contextMenus.create({
+        id: targetMenuId(target.id),
+        title: target.label,
+        contexts: ['page'],
+        parentId: MENU_ROOT_ID,
+      });
+    }
+  } catch (error) {
+    console.error('[send-to-opportune] Failed to rebuild context menus', error);
   }
 }
 
@@ -96,7 +101,7 @@ async function handleMenuClick(
   const targetId = targetIdFromMenuId(info.menuItemId);
   if (!targetId) return;
 
-  const targets = (await webhookTargets.getValue()) ?? [];
+  const targets = await readWebhookTargets();
   const target = targets.find((item) => item.id === targetId);
 
   if (!target) {
